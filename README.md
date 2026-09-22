@@ -1,200 +1,289 @@
-# ShadowPortX 3.0
+<div align="center">
 
-**Attack Surface Intelligence, Exposure Management & Offensive Security Validation Platform**
+<img src="frontend/public/icon.svg" width="84" height="84" alt="ShadowPortX" />
 
-ShadowPortX 2.0 is an authorized attack-surface assessment platform that discovers assets,
-identifies exposed services, fingerprints technologies, performs **non-destructive
-service verification**, correlates findings with **public vulnerability intelligence**,
-tracks attack-surface **changes**, and prioritizes remediation with a documented,
-contextual **ShadowPortX Exposure Score (SPX-ES)**.
+# ShadowPortX
 
-> **Authorized assessment only.** Every scan passes a scope guardrail (default-deny).
-> Verification is read-only and non-destructive. Vulnerability handling is *intelligence
-> correlation* — never automated exploitation.
+### Attack Surface Intelligence · Exposure Management · Offensive Security Validation
 
-It evolves the original **ShadowPortX 1.0** desktop scanner (preserved in
-[`legacy/v1.0-desktop/`](legacy/v1.0-desktop/)) into a full platform:
+Discover what an organization exposes to the internet, identify and safely verify the
+services running on it, correlate versions with public vulnerability intelligence, prioritize
+by real-world exposure — not raw CVSS — and track remediation until the risk is gone.
 
-```
-DISCOVER → IDENTIFY → VERIFY → CORRELATE → PRIORITIZE → MONITOR → REMEDIATE → VALIDATE
-```
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-18-20232A?logo=react&logoColor=61DAFB)
+![Tests](https://img.shields.io/badge/tests-50%20passing-2ea44f)
+![Lint](https://img.shields.io/badge/ruff%20%2B%20bandit-clean-2ea44f)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![CI](https://github.com/MBS-23/ShadowPortX/actions/workflows/ci.yml/badge.svg)
+
+</div>
+
+> **Authorized assessment only.** Every scan passes a default-deny scope guardrail before a
+> single packet is sent. Service checks are non-destructive. Vulnerability handling is
+> *intelligence correlation* — never automated exploitation.
 
 ---
+
+## Contents
+
+- [What it is](#what-it-is)
+- [The problem it solves](#the-problem-it-solves)
+- [How it works — the pipeline](#how-it-works--the-pipeline)
+- [What each part does](#what-each-part-does)
+- [Architecture](#architecture)
+- [The SPX Exposure Score](#the-spx-exposure-score)
+- [Safe validation model](#safe-validation-model)
+- [Data model](#data-model)
+- [Remediation lifecycle](#remediation-lifecycle)
+- [Dashboard](#dashboard)
+- [Quickstart](#quickstart)
+- [Deployment](#deployment)
+- [Security](#security)
+- [Testing & CI](#testing--ci)
+- [Project structure](#project-structure)
+- [Roadmap](#roadmap)
+
+---
+
+## What it is
+
+ShadowPortX is a self-hostable **External Attack Surface Management (EASM)** and **exposure
+intelligence** platform. It turns raw reconnaissance into evidence-backed, prioritized
+security findings, continuously monitors the attack surface for change, and gives red teams a
+scoped **engagement workspace** with evidence collection and safe finding validation.
+
+It began as a desktop port scanner (preserved in [`legacy/`](legacy/v1.0-desktop/)) and grew
+into a full platform: a FastAPI backend with independent security engines, an async job model,
+a PostgreSQL/SQLite data layer, and a React security console.
+
+## The problem it solves
+
+Organizations rarely have a reliable, continuously-updated view of everything they expose to
+the internet — or which of those exposures actually matters. Traditional scanners dump raw
+results and leave engineers to manually correlate assets, services, technologies, and
+vulnerabilities. ShadowPortX closes the gap between **"what is exposed?"** and **"what should
+we fix first?"**
+
+## How it works — the pipeline
+
+```mermaid
+flowchart LR
+    T([Authorized target]) --> D["Discover<br/>DNS, subdomains, WHOIS, IPs"]
+    D --> I["Identify<br/>TCP / UDP / SYN<br/>protocol-first fingerprinting"]
+    I --> V["Verify<br/>non-destructive service checks"]
+    V --> C["Correlate<br/>product to CPE to CVE to CVSS"]
+    C --> P["Prioritize<br/>SPX Exposure Score"]
+    P --> MO["Monitor<br/>change detection, schedules"]
+    MO --> R["Report and Remediate<br/>findings, evidence, verify-fix"]
+    R -. re-scan .-> D
+```
+
+Each stage is an independent engine operating on plain data objects, so it can be tested in
+isolation and recomposed by the scan orchestrator.
+
+## What each part does
+
+| Engine / module | What it actually does |
+|---|---|
+| **Recon** ([`engines/recon`](backend/shadowportx/engines/recon)) | Resolves DNS (A/AAAA/CNAME/MX/NS/TXT/SOA/CAA/DNSSEC), enumerates subdomains from a built-in wordlist (optionally certificate transparency), runs WHOIS, and maps IPs. Builds the asset inventory. |
+| **Scanner** ([`engines/scanner`](backend/shadowportx/engines/scanner)) | Async TCP-connect / SYN (scapy) / UDP scanning with controlled concurrency, rate limiting, timeouts and retries. Grabs banners and does **protocol-first** service/version fingerprinting with evidence — so a Jenkins on `:8080` or SSH on `:2222` is still identified correctly. |
+| **Verification** ([`engines/verification`](backend/shadowportx/engines/verification)) | Read-only, non-destructive checks that observe whether a security condition actually exists (e.g. "Redis answered `INFO` without auth", "Docker API responded without auth"). Covers Redis, MongoDB, Elasticsearch, memcached, Docker, FTP, SMTP, Grafana, Jenkins, Kibana. |
+| **Intel** ([`engines/intel`](backend/shadowportx/engines/intel)) | Normalizes real-world versions (e.g. `8.9p1`) and correlates detected product/version → CPE → CVE → CVSS against a bundled offline dataset. States *"public vulnerability intelligence exists"* — not *"exploited"*. |
+| **Correlation** ([`engines/correlation`](backend/shadowportx/engines/correlation)) | Assembles scanner + recon + verification + intel signals into evidence-based findings, each with a detection method, confidence, and evidence-maturity **state** (detected → potentially-affected → confirmed). |
+| **Risk** ([`engines/risk`](backend/shadowportx/engines/risk)) | Computes the contextual **SPX Exposure Score** and shows a transparent per-factor breakdown for every finding. |
+| **Graph** ([`api/v1/graph.py`](backend/shadowportx/api/v1/graph.py)) | Builds a clickable relationship graph (asset → ip → port → service → technology → vulnerability → finding) and **blast-radius** analysis ("how many assets does this CVE/technology touch?"). |
+| **Trends** ([`services/metrics.py`](backend/shadowportx/services/metrics.py)) | Captures a security-posture snapshot at each scan to power trend charts, executive posture deltas, and "why did risk change" contributors. |
+| **Validation** ([`services/validation.py`](backend/shadowportx/services/validation.py)) | Safe (L0–L2) confirmation of a finding via read-only verification; honestly marks anything needing L3/L4 as *needs-verification* instead of faking a result. |
+| **Reporting** ([`engines/reporting`](backend/shadowportx/engines/reporting)) | Executive + technical reports in JSON / CSV / HTML / PDF. |
+| **Worker + Scheduler** ([`worker/`](backend/shadowportx/worker)) | Async job execution off the request path, plus recurring scheduled scans for continuous monitoring. |
+| **Notifications** ([`services/notifications.py`](backend/shadowportx/services/notifications.py)) | Outbound webhooks (Slack/Teams/Discord/generic) on new high/critical findings — the extension point for enterprise connectors. |
 
 ## Architecture
 
-```
-                         React dashboard (Vite + Tailwind + Recharts)
-                                        │  /api/v1
-                                        ▼
-                              FastAPI  (async, JWT/RBAC)
-                                        │
-        ┌───────────────┬──────────────┼───────────────┬────────────────┐
-        ▼               ▼              ▼               ▼                ▼
-   Recon Engine    Scanner Engine  Verification    Intel Engine    Risk Engine
-   DNS/subdomain   TCP/UDP/SYN     Redis/Mongo     CPE→CVE→CVSS    SPX-ES
-   WHOIS/TLS/HTTP  banner/service  Docker/ES/...   (offline seed)  (contextual)
-        └───────────────┴──────────────┼───────────────┴────────────────┘
-                                        ▼
-                              Correlation Engine → Findings (evidence-based)
-                                        ▼
-              Change detection · Continuous monitoring · Reporting · Notifications
-                                        ▼
-                     SQLAlchemy (async)  →  SQLite (dev) / PostgreSQL (prod)
+```mermaid
+flowchart TB
+    UI["React dashboard<br/>Vite, Tailwind, Recharts"] -->|REST API| API["FastAPI<br/>JWT, RBAC, rate-limit, security headers"]
+    API --> ENG
+    subgraph ENG["Security engines"]
+        direction LR
+        RE[Recon] ~~~ SC[Scanner] ~~~ VE[Verification]
+        IN[Intel] ~~~ CO[Correlation] ~~~ RI[Risk]
+        GR[Graph] ~~~ TR[Trends] ~~~ RP[Reporting]
+    end
+    API --> WK["Async worker and scheduler"]
+    WK --> ENG
+    ENG --> DB[("Async SQLAlchemy<br/>SQLite / PostgreSQL")]
+    API --> DB
+    API --> NO["Webhooks and integrations"]
 ```
 
-Backend package lives in [`backend/shadowportx/`](backend/shadowportx/); engines are
-independent and unit-tested (`engines/{scanner,recon,verification,intel,correlation,risk,reporting}`).
+**Stack:** Python 3.11+ · FastAPI · async SQLAlchemy 2.0 · Pydantic v2 · httpx · dnspython ·
+cryptography · reportlab · React 18 · Vite · Tailwind · Recharts · Docker · GitHub Actions.
 
----
+## The SPX Exposure Score
+
+CVSS measures a vulnerability's intrinsic severity. **SPX-ES** answers *"what should this
+organization fix first?"* by combining severity with real-world context:
+
+```
+SPX-ES = 100 · Σ (weightᵢ · factorᵢ) + modifiers        (clamped 0–100)
+
+  severity        0.35   normalized CVSS / qualitative rank
+  exposure        0.20   internet-facing > limited > internal
+  criticality     0.15   business criticality of the asset
+  confidence      0.10   detection confidence
+  exploit_intel   0.10   public exploit / KEV known
+  verification    0.10   was a security condition actually observed
+```
+
+The same CVSS 9.8 can score **100** on an internet-facing production asset and **~60** on an
+internal dev box. Weights are configurable; the full breakdown is shown on every finding.
+
+## Safe validation model
+
+```mermaid
+flowchart TB
+    L0["L0 · Detection<br/>service/version identified"] --> L1["L1 · Passive<br/>banners, headers, metadata"]
+    L1 --> L2["L2 · Non-destructive verification<br/>read-only condition check"]
+    L2 --> L3["L3 · Proof-of-concept"]
+    L3 --> L4["L4 · Controlled exploitation"]
+    classDef ok fill:#0b2a1e,stroke:#34d399,color:#d1fae5;
+    classDef off fill:#2a0b0b,stroke:#f87171,color:#fee2e2;
+    class L0,L1,L2 ok;
+    class L3,L4 off;
+```
+
+Levels **0–2 are implemented** (read-only). Levels **3–4 are deliberately not enabled** — the
+platform never runs exploitation and never fabricates a confirmation.
+
+## Data model
+
+```mermaid
+erDiagram
+    ORGANIZATION ||--o{ ASSET : owns
+    ORGANIZATION ||--o{ SCAN : runs
+    ORGANIZATION ||--o{ ENGAGEMENT : has
+    ORGANIZATION ||--o{ FINDING : tracks
+    ASSET ||--o{ PORT : exposes
+    PORT ||--o{ SERVICE : runs
+    ASSET ||--o{ TECHNOLOGY : uses
+    ASSET ||--o{ CERTIFICATE : presents
+    ASSET ||--o{ FINDING : has
+    SERVICE ||--o{ FINDING : "linked to"
+    VULNERABILITY ||--o{ FINDING : "referenced by"
+    ENGAGEMENT ||--o{ SCAN : groups
+    SCAN ||--o{ ASSET_CHANGE : detects
+```
+
+## Remediation lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> New
+    New --> Triaged
+    Triaged --> InProgress
+    InProgress --> Verifying : Verify fix re-scan
+    Verifying --> Resolved : condition gone
+    Verifying --> New : still present
+    Resolved --> [*]
+```
+
+## Dashboard
+
+A SOC/ASM-style console with pages for Overview, Assets (+ detail), Services, Technologies,
+Vulnerabilities, Findings (+ detail with evidence & SPX-ES breakdown), Changes, **Asset
+Graph**, Risk, **Trends**, Scan History, **Engagements**, Monitoring, Integrations, Scope, and
+Reports. Dark, dense, and keyboard-friendly — severity is never conveyed by color alone.
 
 ## Quickstart
 
-### Backend (API)
+**Backend (API):**
 ```bash
 cd backend
 python -m venv .venv
 ./.venv/Scripts/pip install -e ".[dev]"      # Windows  (Linux/macOS: .venv/bin/pip)
 ./.venv/Scripts/python -m uvicorn shadowportx.main:app --reload
-# API + docs: http://localhost:8000/docs
 ```
 
-### Frontend (dashboard)
+**Frontend (dashboard):**
 ```bash
 cd frontend
 npm install
-npm run dev
-# Dashboard: http://localhost:5173  (proxies /api → :8000)
+npm run dev            # http://localhost:5173  (proxies /api → :8000)
 ```
-Dev login: `admin@shadowportx.local` / `shadowportx` (in debug mode the dashboard also
-works without login). Override with `SPX_ADMIN_PASSWORD`.
 
-### Demo data (real, engine-produced)
+**Demo data** (spins up local fake services and runs real scans):
 ```bash
 cd backend && ./.venv/Scripts/python scripts/seed_demo.py
 ```
-Spins up local fake services and runs a real scan → populates assets, services, findings.
 
-### CLI
+**Single process** (API also serves the built dashboard at `/`):
+```bash
+cd frontend && npm run build && cp -r dist ../backend/webui
+cd ../backend && ./.venv/Scripts/python -m uvicorn shadowportx.main:app   # http://localhost:8000
+```
+
+**CLI:**
 ```bash
 python -m shadowportx.cli scan 127.0.0.1 --ports top1000 --json report.json
 ```
 
-### Full stack (Docker)
+**Validation lab** (vulnerable + hardened services on localhost):
 ```bash
-cd deploy && docker compose up --build
-# Dashboard: http://localhost:8080   API: http://localhost:8000
+cd lab && docker compose up -d
 ```
 
-### Validation lab
+Default dev login: `admin@shadowportx.local` / `shadowportx` (override with `SPX_ADMIN_PASSWORD`).
+
+## Deployment
+
+**Full stack with Docker Compose** (PostgreSQL + backend + dashboard):
 ```bash
-cd lab && docker compose up -d   # vulnerable + hardened services on 127.0.0.1
-```
-See [`lab/README.md`](lab/README.md) for the detection → remediation → re-scan walkthrough.
-
----
-
-## Features
-
-| Capability | Detail |
-|---|---|
-| **Asset discovery** | Domains, subdomains (wordlist + optional CT), IPs, DNS (A/AAAA/CNAME/MX/NS/TXT/SOA/CAA/DNSSEC), WHOIS |
-| **Network discovery** | Async TCP connect / SYN (scapy) / UDP, controlled concurrency, rate limiting, timeouts, retries |
-| **Service detection** | Protocol-first fingerprinting with evidence + confidence + CPE (works on non-standard ports) |
-| **Service verification** | Non-destructive checks: Redis, MongoDB, Elasticsearch, Docker API, memcached, FTP (anon), SMTP, Grafana, Jenkins, Kibana |
-| **Web/TLS intelligence** | Security headers, redirects, cookies, technology fingerprinting; TLS versions, cert validity/expiry, SANs |
-| **Vulnerability intelligence** | Offline CVE seed dataset → version-aware CPE/CVE/CVSS correlation (correlation, not exploitation) |
-| **Risk engine** | SPX-ES: severity + exposure + criticality + confidence + exploit intel + verification, with transparent breakdown |
-| **Findings** | Evidence-based, states (detected / potentially-affected / confirmed), lifecycle, dedupe, auto-resolve |
-| **Change detection** | New/removed assets, ports, services; risk increased/decreased |
-| **Continuous monitoring** | Scheduled recurring scans (in-process asyncio scheduler) |
-| **Remediation loop** | "Verify fix" re-scan → findings auto-resolve, risk drops |
-| **Asset graph** | Clickable relationship map (asset→ip→port→service→technology→vulnerability→finding) used as a navigation surface |
-| **Blast radius** | "How many assets does this technology/CVE touch?" — affected / internet-facing / production / critical counts |
-| **Security trends** | Metric snapshot per scan → executive posture, multi-metric trend, and *why did risk change* contributors |
-| **Engagement workspace** | Authorized pentest / bug-bounty workspaces grouping scope, scans, findings, evidence + evidence-package export |
-| **Safe validation** | Non-destructive confirmation of findings (L0–L2 via read-only verification). **L3 PoC / L4 exploitation are not enabled** — no fake confirmations |
-| **Reporting** | Executive + technical in JSON / CSV / HTML / PDF |
-| **Notifications** | Outbound webhooks (Slack/Teams/Discord/generic) on new high/critical findings |
-| **Platform** | JWT auth + RBAC (owner/admin/analyst/developer/viewer), scope guardrail, audit log, security headers, API rate limiting |
-
----
-
-## SPX Exposure Score (SPX-ES)
-
-Not CVSS. CVSS measures a vulnerability's intrinsic severity; **SPX-ES answers "what should
-this organization fix first?"**
-
-```
-SPX-ES = 100 · Σ (weightᵢ · factorᵢ) + modifiers        (clamped 0–100)
-
-factor         weight   source
-severity        0.35    CVSS/10 or qualitative rank
-exposure        0.20    internet-facing > limited > internal
-criticality     0.15    business criticality of the asset
-confidence      0.10    detection confidence
-exploit_intel   0.10    public exploit / KEV known
-verification    0.10    was a security condition actually observed
+cd deploy && docker compose up --build     # dashboard :8080 · API :8000
 ```
 
-The full per-factor breakdown is shown on every finding (methodology in
-[`engines/risk/scoring.py`](backend/shadowportx/engines/risk/scoring.py)). Weights are
-configurable via `SPX_RISK_WEIGHT_*`.
+**Vercel (dashboard) + hosted backend.** The dashboard deploys to Vercel as a static SPA
+([`frontend/vercel.json`](frontend/vercel.json)); point it at the backend with
+`VITE_API_BASE`. The backend (which needs raw sockets and long-running jobs) runs on a
+container host (Docker/Render/Railway/Fly/VPS). Set `SPX_CORS_ORIGINS` to the dashboard origin.
+See [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
----
+## Security
 
-## API (`/api/v1`)
-
-`auth` · `overview` · `risk` · `trends` · `graph` (+ `blast-radius`) · `assets` · `services` ·
-`technologies` · `vulnerabilities` · `findings` (+ `{id}/verify`, `{id}/validate`) · `changes` · `scans` (+ `{a}/compare/{b}`) ·
-`engagements` (+ `{id}/report`) · `schedules` · `notifications` · `scope` · `reports`. Docs at `/docs`.
-
-## Data model
-
-`organizations · users · scope_rules · assets · ports · services · technologies ·
-certificates · scans · asset_changes · vulnerabilities · findings · reports · audit_log ·
-schedules · notification_channels · metric_snapshots · engagements` (async SQLAlchemy;
-SQLite dev / PostgreSQL prod).
-
----
+See [`SECURITY.md`](SECURITY.md). Highlights: default-deny scope enforcement, JWT + RBAC,
+non-destructive verification (no exploitation), security headers, per-IP API rate limiting,
+Pydantic input validation, ORM-parameterized queries, audit logging, env-only secrets (the
+server refuses to boot in production with a weak key), and CI-enforced `ruff` + `bandit` +
+`pip-audit`.
 
 ## Testing & CI
 
 ```bash
-cd backend && pytest -q          # 50 tests: scope, scanner, detector, intel, risk, recon,
-                                 # verification, reporting, pipeline, graph, trends, engagements, API
+cd backend && pytest -q          # 50 tests across engines, pipeline, graph, trends, engagements, API
 ruff check . && bandit -c pyproject.toml -r shadowportx
 ```
-GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint (ruff),
-security (bandit + pip-audit), tests (pytest + coverage), frontend build, and Docker builds
-on every push/PR.
+GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint, SAST,
+dependency audit, tests with coverage, the frontend build, and Docker image builds on every push.
 
-## Security posture
+## Project structure
 
-Scope enforcement (default-deny), non-destructive verification, correlation-not-exploitation,
-JWT/RBAC, audit logging, security headers, API rate limiting, secrets via env (never in
-source), bandit + pip-audit in CI. The platform can assess itself in the lab.
+```
+backend/shadowportx/   FastAPI app, engines, services, worker, data model
+frontend/src/          React dashboard (pages, components, API client)
+lab/                   validation lab (vulnerable + hardened services)
+deploy/                docker-compose full stack
+docs/                  deployment & architecture docs
+legacy/v1.0-desktop/   the original desktop scanner (preserved)
+```
 
-## Configuration
+## Roadmap
 
-Copy [`backend/.env.example`](backend/.env.example) → `.env`. Key vars: `SPX_DATABASE_URL`,
-`SPX_SECRET_KEY`, `SPX_ENFORCE_SCOPE`, `SPX_DEBUG`, `SPX_ADMIN_PASSWORD`,
-`SPX_INTEL_OFFLINE_ONLY`, `SPX_NVD_API_KEY`, `SPX_API_RATE_LIMIT_PER_MIN`.
-
-## Version story
-
-- **1.0** ([`legacy/`](legacy/v1.0-desktop/)) — PyQt6 desktop scanner (TCP/UDP/stealth/version, DNS/WHOIS, PDF/JSON).
-- **2.0** — attack-surface intelligence platform (asset inventory, service verification, CVE intel, SPX-ES, findings, change detection, monitoring, RBAC, reporting).
-- **2.5** — asset relationship graph, blast-radius analysis, security-trend intelligence + executive posture.
-- **3.0** (this repo) — **engagement workspaces (pentest / bug-bounty), evidence packages, and
-  safe non-destructive validation** (L0–L2; L3/L4 exploitation deliberately not enabled).
-- **Enterprise roadmap** — SSO/SAML/OIDC + MFA, hardened multi-tenant isolation + teams,
-  vendor connectors (Jira/ServiceNow/Splunk/Sentinel) on the notification interface,
-  Celery/Redis workers, Kubernetes deployment.
+SSO/SAML/OIDC + MFA · hardened multi-tenant isolation & teams · vendor connectors
+(Jira/ServiceNow/Splunk/Sentinel) on the notification interface · Celery/Redis workers ·
+Kubernetes deployment.
 
 ## License
 
-MIT.
-
----
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+[MIT](LICENSE). Authorized use only — assess only systems you own or are permitted to test.

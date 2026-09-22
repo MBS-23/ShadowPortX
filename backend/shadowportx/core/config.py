@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     # When True (default), the platform refuses to scan targets outside the
     # configured authorization scope. Disabling requires an explicit override.
     enforce_scope: bool = True
+    # CORS: comma-separated extra allowed origins for a split deploy (Vercel frontend +
+    # separately hosted backend), e.g. "https://shadowportx.vercel.app". localhost is always allowed.
+    cors_origins: str = ""
     # Platform self-protection: max API requests per client IP per minute (0 = unlimited).
     api_rate_limit_per_min: int = 600
     scheduler_enabled: bool = True

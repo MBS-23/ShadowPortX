@@ -1,8 +1,9 @@
 import axios from "axios";
 
-// In dev, Vite proxies /api to the FastAPI backend (see vite.config.js). A JWT, if the
-// user logs in, is attached automatically; otherwise the backend's dev fallback applies.
-const api = axios.create({ baseURL: "/api/v1" });
+// In dev, Vite proxies /api to the FastAPI backend (see vite.config.js). In production
+// (e.g. Vercel frontend + separately hosted backend), set VITE_API_BASE to the backend URL,
+// e.g. "https://api.example.com/api/v1". A JWT, if present, is attached automatically.
+const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE || "/api/v1" });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("spx_token");
