@@ -1,0 +1,52 @@
+# ShadowPortX 2.0 — full stack (Postgres + backend API/worker + React dashboard).
+# Usage:  cd deploy && docker compose up --build
+# Dashboard: http://localhost:8080   API/docs: http://localhost:8000/docs
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: shadowportx
+      POSTGRES_PASSWORD: shadowportx
+      POSTGRES_DB: shadowportx
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shadowportx"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Provisioned for the future Celery/RQ worker (the MVP runs an in-process asyncio worker).
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../backend
+    environment:
+      SPX_ENVIRONMENT: production
+      SPX_DEBUG: "false"
+      SPX_SECRET_KEY: "change-me-please-use-a-long-random-secret"
+      SPX_DATABASE_URL: "postgresql+asyncpg://shadowportx:shadowportx@postgres:5432/shadowportx"
+      SPX_ENFORCE_SCOPE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

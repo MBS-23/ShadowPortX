@@ -1,0 +1,49 @@
+/* gui/theme.qss */
+
+QMainWindow {
+    background-color: #121212;
+    color: #00FF7F;
+    font-family: "Consolas", monospace;
+}
+
+QTabWidget::pane {
+    border: 2px solid #00FF7F;
+}
+
+QTabBar::tab {
+    background: #1f1f1f;
+    color: #00FF7F;
+    padding: 8px;
+    border: 1px solid #00FF7F;
+    border-bottom: none;
+}
+
+QTabBar::tab:selected {
+    background: #00FF7F;
+    color: black;
+}
+
+QPushButton {
+    background-color: #1f1f1f;
+    color: #00FF7F;
+    border: 1px solid #00FF7F;
+    padding: 6px 10px;
+}
+
+QPushButton:hover {
+    background-color: #00FF7F;
+    color: black;
+}
+
+QLineEdit, QComboBox, QTextEdit {
+    background-color: #1e1e1e;
+    color: #00FF7F;
+    border: 1px solid #00FF7F;
+    padding: 5px;
+}
+QLabel#TitleLabel {
+    color: #00FF00;  /* Bright green */
+    font-size: 24px;
+    font-weight: bold;
+    padding: 10px;
+}

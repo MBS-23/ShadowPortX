@@ -1,0 +1,11 @@
+PyQt6
+scapy
+python-whois
+dnspython
+cryptography
+bcrypt
+fpdf
+colorama
+pyfiglet
+python-nmap
+reportlab

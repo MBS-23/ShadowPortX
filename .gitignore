@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+
+# ShadowPortX runtime data
+backend/var/
+*.db
+*.db-wal
+*.db-shm
+.env
+!.env.example
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Legacy PyInstaller build artifacts
+legacy/**/build/
+legacy/**/dist/
+legacy/**/*.spec.bak
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

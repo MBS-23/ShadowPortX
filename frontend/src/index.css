@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    margin: 0;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #33456b transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #243250;
+    border-radius: 6px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-border rounded-xl shadow-card;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium
+      transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-bg hover:bg-cyan-300;
+  }
+  .btn-ghost {
+    @apply btn bg-surface-2 text-text border border-border hover:bg-surface-3;
+  }
+  .input {
+    @apply bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-text
+      placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary;
+  }
+  .nav-link {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted
+      hover:text-text hover:bg-surface-2 transition-colors;
+  }
+  .nav-link-active {
+    @apply bg-surface-2 text-text font-medium;
+  }
+  .th {
+    @apply text-left text-xs font-semibold uppercase tracking-wide text-faint px-3 py-2.5;
+  }
+  .td {
+    @apply px-3 py-2.5 text-sm border-t border-border/70 align-middle;
+  }
+}
