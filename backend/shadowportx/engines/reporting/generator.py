@@ -109,7 +109,7 @@ def render_pdf(data: dict, path: str) -> str:
     doc = SimpleDocTemplate(path, pagesize=A4, title="ShadowPortX Security Assessment")
     styles = getSampleStyleSheet()
     story = [
-        Paragraph("ShadowPortX 2.0 — Security Assessment Report", styles["Title"]),
+        Paragraph("ShadowPortX — Security Assessment Report", styles["Title"]),
         Paragraph(f"Organization: {data['organization']}", styles["Normal"]),
         Paragraph(f"Generated: {data['generated_at']}", styles["Normal"]),
         Spacer(1, 16),
@@ -161,7 +161,7 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
  .sev-critical{color:#f87171;font-weight:700}.sev-high{color:#fb923c;font-weight:700}
  .sev-medium{color:#fbbf24}.sev-low{color:#60a5fa}.sev-info{color:#94a3b8}
 </style></head><body>
- <h1>ShadowPortX 2.0 — Security Assessment</h1>
+ <h1>ShadowPortX — Security Assessment</h1>
  <div class="muted">{{ organization }} · generated {{ generated_at }}</div>
  <div class="cards">
    <div class="card"><span class="muted">Org Risk</span><b>{{ summary.org_risk }}</b></div>

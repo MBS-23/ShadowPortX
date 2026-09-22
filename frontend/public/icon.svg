@@ -1,0 +1,18 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ShadowPortX">
+  <!-- perimeter tile: the security surface -->
+  <rect x="1.25" y="1.25" width="45.5" height="45.5" rx="12" fill="#0B1220"/>
+  <rect x="1.25" y="1.25" width="45.5" height="45.5" rx="12" fill="none" stroke="#22D3EE" stroke-opacity="0.28" stroke-width="1.5"/>
+  <!-- network X: two crossing edges -->
+  <path d="M14 14 L34 34 M34 14 L14 34" stroke="#E5E7EB" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- accent edge to the exposed port (top-right) -->
+  <path d="M24 24 L34 14" stroke="#22D3EE" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- perimeter nodes -->
+  <circle cx="14" cy="14" r="3" fill="#E5E7EB"/>
+  <circle cx="14" cy="34" r="3" fill="#E5E7EB"/>
+  <circle cx="34" cy="34" r="3" fill="#E5E7EB"/>
+  <!-- exposed port node (hollow, discovered) -->
+  <circle cx="34" cy="14" r="3.4" fill="#0B1220" stroke="#22D3EE" stroke-width="2"/>
+  <!-- core / port hub -->
+  <circle cx="24" cy="24" r="4.1" fill="#0B1220" stroke="#22D3EE" stroke-width="2.2"/>
+  <circle cx="24" cy="24" r="1.5" fill="#22D3EE"/>
+</svg>

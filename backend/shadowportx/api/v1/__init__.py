@@ -7,6 +7,7 @@ from shadowportx.api.v1 import (
     auth,
     changes,
     dashboard,
+    engagements,
     findings,
     graph,
     inventory,
@@ -26,6 +27,7 @@ api_router.include_router(risk.router)
 api_router.include_router(trends.router)
 api_router.include_router(graph.router)
 api_router.include_router(scans.router)
+api_router.include_router(engagements.router)
 api_router.include_router(assets.router)
 api_router.include_router(inventory.router)
 api_router.include_router(findings.router)

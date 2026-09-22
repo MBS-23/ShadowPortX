@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="ShadowPortX 2.0",
+    title="ShadowPortX",
     version=__version__,
     description=(
         "Attack Surface Intelligence & Security Exposure Management Platform. "

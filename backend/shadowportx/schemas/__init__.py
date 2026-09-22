@@ -52,6 +52,7 @@ class ScanCreate(BaseModel):
     subdomains: bool = True
     concurrency: int | None = None
     rate_limit: int | None = None
+    engagement_id: int | None = None
 
 
 class ScanOut(ORMModel):
@@ -62,6 +63,7 @@ class ScanOut(ORMModel):
     progress: float
     stats: dict
     error: str | None = None
+    engagement_id: int | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
     created_at: datetime
@@ -172,13 +174,28 @@ class FindingDetail(FindingOut):
     risk_breakdown: dict = {}
     assignee: str | None = None
     team: str | None = None
+    notes: str | None = None
     resolved_at: datetime | None = None
+    validated_at: datetime | None = None
 
 
 class FindingUpdate(BaseModel):
     status: enums.FindingStatus | None = None
     assignee: str | None = None
     team: str | None = None
+    notes: str | None = None
+
+
+class ValidationResult(BaseModel):
+    finding_id: int
+    spx_id: str
+    validated: bool
+    state: enums.FindingState
+    condition: str | None = None
+    severity: enums.Severity
+    confidence: enums.Confidence
+    evidence: dict = {}
+    message: str
 
 
 # --- changes ---
@@ -371,3 +388,34 @@ class Trends(BaseModel):
     change: dict = {}
     contributors: dict = {}
     executive: dict = {}
+
+
+# --- engagements (3.0 workspace) ---
+class EngagementIn(BaseModel):
+    name: str
+    client: str | None = None
+    kind: str = Field(default="pentest", pattern="^(pentest|bug_bounty|internal)$")
+    scope_note: str | None = None
+    tester: str | None = None
+    status: str = Field(default="active", pattern="^(planned|active|completed)$")
+    notes: str | None = None
+
+
+class EngagementOut(ORMModel):
+    id: int
+    name: str
+    client: str | None = None
+    kind: str
+    status: str
+    scope_note: str | None = None
+    tester: str | None = None
+    notes: str | None = None
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+    created_at: datetime
+
+
+class EngagementDetail(EngagementOut):
+    stats: dict = {}
+    scans: list[ScanOut] = []
+    findings: list[FindingOut] = []

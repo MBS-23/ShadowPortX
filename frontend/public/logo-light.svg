@@ -1,0 +1,16 @@
+<svg width="238" height="48" viewBox="0 0 238 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ShadowPortX">
+  <!-- icon (navy tile works on light backgrounds) -->
+  <rect x="1.25" y="1.25" width="45.5" height="45.5" rx="12" fill="#0B1220"/>
+  <path d="M14 14 L34 34 M34 14 L14 34" stroke="#E5E7EB" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M24 24 L34 14" stroke="#22D3EE" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="14" cy="14" r="3" fill="#E5E7EB"/>
+  <circle cx="14" cy="34" r="3" fill="#E5E7EB"/>
+  <circle cx="34" cy="34" r="3" fill="#E5E7EB"/>
+  <circle cx="34" cy="14" r="3.4" fill="#0B1220" stroke="#22D3EE" stroke-width="2"/>
+  <circle cx="24" cy="24" r="4.1" fill="#0B1220" stroke="#22D3EE" stroke-width="2.2"/>
+  <circle cx="24" cy="24" r="1.5" fill="#22D3EE"/>
+  <!-- wordmark for light backgrounds -->
+  <text x="60" y="31.5" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="23" font-weight="700" letter-spacing="-0.4">
+    <tspan fill="#0B1220">ShadowPort</tspan><tspan fill="#0E7490" font-weight="800">X</tspan>
+  </text>
+</svg>

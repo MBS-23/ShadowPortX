@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { endpoints } from "../api";
 import { useFetch } from "../lib/useFetch";
 import { Card, SeverityBadge, StateBadge, StatusBadge, RiskScore, Spinner, ErrorNote, Pill } from "../components/ui";
@@ -13,6 +13,8 @@ export default function FindingDetail() {
   const { data: f, loading, error, reload } = useFetch(() => endpoints.finding(id), [id]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [notes, setNotes] = useState("");
+  useEffect(() => { if (f) setNotes(f.notes || ""); }, [f]);
 
   if (loading && !f) return <Spinner />;
   if (error) return <ErrorNote error={error} />;
@@ -29,6 +31,20 @@ export default function FindingDetail() {
       setMsg(`Re-verification scan #${scan.id} queued. The finding auto-resolves if the condition is gone.`);
       await reload();
     } catch (e) { setMsg(e?.response?.data?.detail || "Failed to queue verification"); }
+    finally { setBusy(false); }
+  };
+  const validate = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const res = await endpoints.validateFinding(id);
+      setMsg(res.message);
+      await reload();
+    } catch (e) { setMsg(e?.response?.data?.detail || "Validation failed"); }
+    finally { setBusy(false); }
+  };
+  const saveNotes = async () => {
+    setBusy(true);
+    try { await endpoints.updateFinding(id, { notes }); setMsg("Notes saved."); await reload(); }
     finally { setBusy(false); }
   };
 
@@ -121,10 +137,26 @@ export default function FindingDetail() {
                 {STATUSES.map((s) => <option key={s} value={s}>{titleCase(s)}</option>)}
               </select>
             </div>
-            <button className="btn-primary w-full justify-center" disabled={busy} onClick={verify}>
-              {busy ? "Working…" : "Verify fix (re-scan)"}
-            </button>
-            <p className="text-[10px] text-faint">Runs an authorized re-assessment of the asset. Detection → Remediation → Validation.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button className="btn-ghost justify-center" disabled={busy} onClick={validate}>
+                {busy ? "…" : "Validate (safe)"}
+              </button>
+              <button className="btn-primary justify-center" disabled={busy} onClick={verify}>
+                {busy ? "…" : "Verify fix"}
+              </button>
+            </div>
+            {f.validated_at && <div className="text-[10px] text-ok">Last validated {fmtTime(f.validated_at)}</div>}
+            <p className="text-[10px] text-faint">
+              Validate = non-destructive confirmation (L0–L2). Verify fix = authorized re-scan.
+              Controlled exploitation (L3–L4) is not enabled.
+            </p>
+          </Card>
+
+          <Card className="p-4 space-y-2">
+            <h2 className="text-sm font-medium">Analyst notes</h2>
+            <textarea className="input w-full h-24 resize-y" placeholder="Reproduction steps, context, evidence notes…"
+              value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <button className="btn-ghost w-full justify-center" disabled={busy} onClick={saveNotes}>Save notes</button>
           </Card>
 
           <Card className="p-4">

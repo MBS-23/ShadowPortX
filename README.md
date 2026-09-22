@@ -1,6 +1,6 @@
-# ShadowPortX 2.5
+# ShadowPortX 3.0
 
-**Attack Surface Intelligence & Security Exposure Management Platform**
+**Attack Surface Intelligence, Exposure Management & Offensive Security Validation Platform**
 
 ShadowPortX 2.0 is an authorized attack-surface assessment platform that discovers assets,
 identifies exposed services, fingerprints technologies, performs **non-destructive
@@ -112,6 +112,8 @@ See [`lab/README.md`](lab/README.md) for the detection → remediation → re-sc
 | **Asset graph** | Clickable relationship map (asset→ip→port→service→technology→vulnerability→finding) used as a navigation surface |
 | **Blast radius** | "How many assets does this technology/CVE touch?" — affected / internet-facing / production / critical counts |
 | **Security trends** | Metric snapshot per scan → executive posture, multi-metric trend, and *why did risk change* contributors |
+| **Engagement workspace** | Authorized pentest / bug-bounty workspaces grouping scope, scans, findings, evidence + evidence-package export |
+| **Safe validation** | Non-destructive confirmation of findings (L0–L2 via read-only verification). **L3 PoC / L4 exploitation are not enabled** — no fake confirmations |
 | **Reporting** | Executive + technical in JSON / CSV / HTML / PDF |
 | **Notifications** | Outbound webhooks (Slack/Teams/Discord/generic) on new high/critical findings |
 | **Platform** | JWT auth + RBAC (owner/admin/analyst/developer/viewer), scope guardrail, audit log, security headers, API rate limiting |
@@ -144,23 +146,23 @@ configurable via `SPX_RISK_WEIGHT_*`.
 ## API (`/api/v1`)
 
 `auth` · `overview` · `risk` · `trends` · `graph` (+ `blast-radius`) · `assets` · `services` ·
-`technologies` · `vulnerabilities` · `findings` (+ `{id}/verify`) · `changes` · `scans`
-(+ `{a}/compare/{b}`) · `schedules` · `notifications` · `scope` · `reports`. Docs at `/docs`.
+`technologies` · `vulnerabilities` · `findings` (+ `{id}/verify`, `{id}/validate`) · `changes` · `scans` (+ `{a}/compare/{b}`) ·
+`engagements` (+ `{id}/report`) · `schedules` · `notifications` · `scope` · `reports`. Docs at `/docs`.
 
 ## Data model
 
 `organizations · users · scope_rules · assets · ports · services · technologies ·
 certificates · scans · asset_changes · vulnerabilities · findings · reports · audit_log ·
-schedules · notification_channels · metric_snapshots` (async SQLAlchemy; SQLite dev /
-PostgreSQL prod).
+schedules · notification_channels · metric_snapshots · engagements` (async SQLAlchemy;
+SQLite dev / PostgreSQL prod).
 
 ---
 
 ## Testing & CI
 
 ```bash
-cd backend && pytest -q          # 48 tests: scope, scanner, detector, intel, risk,
-                                 # recon, verification, reporting, pipeline, graph, trends, API
+cd backend && pytest -q          # 50 tests: scope, scanner, detector, intel, risk, recon,
+                                 # verification, reporting, pipeline, graph, trends, engagements, API
 ruff check . && bandit -c pyproject.toml -r shadowportx
 ```
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint (ruff),
@@ -183,11 +185,12 @@ Copy [`backend/.env.example`](backend/.env.example) → `.env`. Key vars: `SPX_D
 
 - **1.0** ([`legacy/`](legacy/v1.0-desktop/)) — PyQt6 desktop scanner (TCP/UDP/stealth/version, DNS/WHOIS, PDF/JSON).
 - **2.0** — attack-surface intelligence platform (asset inventory, service verification, CVE intel, SPX-ES, findings, change detection, monitoring, RBAC, reporting).
-- **2.5** (this repo) — **asset relationship graph, blast-radius analysis, and security-trend intelligence with executive posture**.
-- **3.0 / enterprise roadmap** — controlled proof-of-concept validation & evidence engine,
-  pentest/bug-bounty engagement workspaces, SSO/SAML/OIDC + MFA, hardened multi-tenant
-  isolation + teams, vendor connectors (Jira/ServiceNow/Splunk/Sentinel) on the notification
-  interface, Celery/Redis workers, Kubernetes deployment.
+- **2.5** — asset relationship graph, blast-radius analysis, security-trend intelligence + executive posture.
+- **3.0** (this repo) — **engagement workspaces (pentest / bug-bounty), evidence packages, and
+  safe non-destructive validation** (L0–L2; L3/L4 exploitation deliberately not enabled).
+- **Enterprise roadmap** — SSO/SAML/OIDC + MFA, hardened multi-tenant isolation + teams,
+  vendor connectors (Jira/ServiceNow/Splunk/Sentinel) on the notification interface,
+  Celery/Redis workers, Kubernetes deployment.
 
 ## License
 

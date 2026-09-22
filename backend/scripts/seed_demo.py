@@ -123,9 +123,9 @@ def _prog(pct, msg):
     sys.stdout.flush()
 
 
-async def _scan(org_id: int, ports: str) -> dict:
+async def _scan(org_id: int, ports: str, engagement_id: int | None = None) -> dict:
     async with session_scope() as session:
-        scan = models.Scan(organization_id=org_id, target="127.0.0.1",
+        scan = models.Scan(organization_id=org_id, target="127.0.0.1", engagement_id=engagement_id,
                            scan_type=enums.ScanType.FULL, status=enums.ScanStatus.QUEUED,
                            config={"ports": ports, "subdomains": False}, stats={})
         session.add(scan)
@@ -140,10 +140,19 @@ async def main() -> None:
     info = await seed()
     org_id = info["org_id"]
 
+    # Demo engagement so the 3.0 workspace is populated.
+    async with session_scope() as session:
+        eng = models.Engagement(organization_id=org_id, name="Acme External Assessment",
+                                client="Acme Corp", kind="pentest", tester="Demo Analyst",
+                                scope_note="127.0.0.0/8 (local lab)", status="active")
+        session.add(eng)
+        await session.flush()
+        eng_id = eng.id
+
     # --- Scan 1: baseline exposure ---
     base = await start_baseline()
     print("Phase 1 — baseline services up (redis, ssh, nginx). Scanning…")
-    s1 = await _scan(org_id, "22,443,6379,8022,8090")
+    s1 = await _scan(org_id, "22,443,6379,8022,8090", engagement_id=eng_id)
     print("Baseline scan:", s1)
 
     # Tag the asset with business context so risk contextualization is meaningful.
@@ -159,7 +168,7 @@ async def main() -> None:
     # --- Scan 2: new exposures appear (elasticsearch, docker, grafana) ---
     expansion = await start_expansion()
     print("\nPhase 2 — new services exposed (elasticsearch, docker, grafana). Re-scanning…")
-    s2 = await _scan(org_id, "22,443,2375,3000,6379,8022,8090,9200")
+    s2 = await _scan(org_id, "22,443,2375,3000,6379,8022,8090,9200", engagement_id=eng_id)
     print("Expanded scan:", s2)
 
     for srv in base + expansion:

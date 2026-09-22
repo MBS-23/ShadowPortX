@@ -5,4 +5,4 @@ identification, non-destructive service verification, vulnerability *intelligenc
 correlation* (never automated exploitation), and contextual risk prioritization.
 """
 
-__version__ = "2.5.0"
+__version__ = "3.0.0"

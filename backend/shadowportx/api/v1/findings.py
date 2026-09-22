@@ -78,8 +78,31 @@ async def update_finding(
         finding.assignee = data["assignee"]
     if "team" in data:
         finding.team = data["team"]
+    if "notes" in data:
+        finding.notes = data["notes"]
     await P.audit(session, ctx.org_id, "finding.updated", finding.spx_id, changes=data, actor=ctx.email)
     return finding
+
+
+@router.post("/{finding_id}/validate", response_model=schemas.ValidationResult)
+async def validate_finding_endpoint(
+    finding_id: int,
+    ctx: Context = Depends(require_scan),
+    session: AsyncSession = Depends(get_session),
+):
+    """Safe, non-destructive validation of a finding (Levels 0–2). Confirms a security
+    condition via read-only verification, or marks it needs-verification. L3/L4 not enabled."""
+    finding = (await session.execute(
+        select(models.Finding).where(
+            models.Finding.id == finding_id, models.Finding.organization_id == ctx.org_id)
+    )).scalar_one_or_none()
+    if not finding:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Finding not found")
+    from shadowportx.services.validation import validate_finding
+    result = await validate_finding(session, finding)
+    await P.audit(session, ctx.org_id, "finding.validated", finding.spx_id,
+                  validated=result["validated"], actor=ctx.email)
+    return result
 
 
 @router.post("/{finding_id}/verify", response_model=schemas.ScanOut, status_code=status.HTTP_201_CREATED)

@@ -20,6 +20,7 @@ const icons = {
   integrations: <IconBase><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></IconBase>,
   graph: <IconBase><circle cx="5" cy="6" r="2.5" /><circle cx="19" cy="6" r="2.5" /><circle cx="12" cy="18" r="2.5" /><path d="M7 7 10.5 16M17 7 13.5 16M7.3 6h9.4" /></IconBase>,
   trends: <IconBase><path d="M3 3v18h18" /><path d="m7 14 3-4 3 3 5-7" /></IconBase>,
+  engagements: <IconBase><path d="M9 3h6l1 3H8zM4 6h16v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /><path d="M9 12h6M9 16h4" /></IconBase>,
 };
 
 const NAV = [
@@ -34,6 +35,7 @@ const NAV = [
   ["/risk", "Risk", "risk"],
   ["/trends", "Trends", "trends"],
   ["/scans", "Scan History", "scans"],
+  ["/engagements", "Engagements", "engagements"],
   ["/monitoring", "Monitoring", "monitoring"],
   ["/integrations", "Integrations", "integrations"],
   ["/scope", "Scope", "scope"],
@@ -45,12 +47,10 @@ export default function Layout({ children }) {
     <div className="min-h-screen flex bg-bg">
       <aside className="sticky top-0 h-screen shrink-0 w-16 md:w-60 border-r border-border bg-surface/60 backdrop-blur flex flex-col">
         <div className="h-14 flex items-center gap-2.5 px-3 md:px-4 border-b border-border">
-          <div className="h-8 w-8 rounded-lg grid place-items-center bg-primary/15 border border-primary/30 shrink-0">
-            <span className="text-primary font-bold text-sm">S</span>
-          </div>
+          <img src="/icon.svg" alt="ShadowPortX" className="h-8 w-8 shrink-0" />
           <div className="hidden md:block leading-tight">
-            <div className="font-semibold text-sm text-text">ShadowPortX</div>
-            <div className="text-[10px] text-faint tracking-wide">ASM · v2.5</div>
+            <div className="font-semibold text-sm text-text">ShadowPort<span className="text-primary">X</span></div>
+            <div className="text-[10px] text-faint tracking-wide">ASM · v3.0</div>
           </div>
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">

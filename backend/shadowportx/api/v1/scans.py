@@ -48,6 +48,7 @@ async def create_scan(
     scan = models.Scan(
         organization_id=ctx.org_id, target=target, scan_type=body.scan_type,
         status=enums.ScanStatus.QUEUED, config=config, stats={},
+        engagement_id=body.engagement_id,
     )
     session.add(scan)
     await session.flush()

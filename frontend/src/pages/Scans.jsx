@@ -11,7 +11,8 @@ const STATUS_TONE = {
 
 export default function Scans() {
   const { data: scans, loading, error, reload } = useFetch(() => endpoints.scans(), [], { pollMs: 2500 });
-  const [form, setForm] = useState({ target: "", ports: "top1000", technique: "tcp_connect", subdomains: true });
+  const { data: engagements } = useFetch(() => endpoints.engagements(), []);
+  const [form, setForm] = useState({ target: "", ports: "top1000", technique: "tcp_connect", subdomains: true, engagement_id: "" });
   const [submitting, setSubmitting] = useState(false);
   const [note, setNote] = useState(null);
 
@@ -24,6 +25,7 @@ export default function Scans() {
         ports: form.ports,
         technique: form.technique,
         subdomains: form.subdomains,
+        engagement_id: form.engagement_id ? Number(form.engagement_id) : null,
       });
       setNote({ ok: true, msg: `Scan #${scan.id} queued for ${scan.target}.` });
       setForm({ ...form, target: "" });
@@ -39,12 +41,12 @@ export default function Scans() {
 
       <Card className="p-4 mb-4">
         <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
             <label className="text-xs text-faint">Target (domain or IP)</label>
             <input className="input w-full mt-1" placeholder="127.0.0.1 or example.com" required
               value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <label className="text-xs text-faint">Ports</label>
             <select className="input w-full mt-1" value={form.ports} onChange={(e) => setForm({ ...form, ports: e.target.value })}>
               <option value="top100">Top 100</option>
@@ -59,6 +61,13 @@ export default function Scans() {
               <option value="tcp_connect">TCP connect</option>
               <option value="tcp_syn">TCP SYN</option>
               <option value="udp">UDP</option>
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-xs text-faint">Engagement</label>
+            <select className="input w-full mt-1" value={form.engagement_id} onChange={(e) => setForm({ ...form, engagement_id: e.target.value })}>
+              <option value="">None</option>
+              {(engagements || []).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           </div>
           <div className="md:col-span-2 flex items-center gap-2 pb-2">

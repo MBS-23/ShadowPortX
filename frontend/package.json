@@ -1,7 +1,7 @@
 {
   "name": "shadowportx-dashboard",
   "private": true,
-  "version": "2.5.0",
+  "version": "3.0.0",
   "type": "module",
   "description": "ShadowPortX 2.0 — Attack Surface Intelligence dashboard",
   "scripts": {

@@ -23,11 +23,9 @@ export default function Login({ onSuccess }) {
     <div className="min-h-screen grid place-items-center bg-bg px-4">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2.5 mb-6 justify-center">
-          <div className="h-9 w-9 rounded-lg grid place-items-center bg-primary/15 border border-primary/30">
-            <span className="text-primary font-bold">S</span>
-          </div>
+          <img src="/icon.svg" alt="ShadowPortX" className="h-10 w-10" />
           <div>
-            <div className="font-semibold text-text">ShadowPortX</div>
+            <div className="font-semibold text-text">ShadowPort<span className="text-primary">X</span></div>
             <div className="text-[10px] text-faint tracking-wide">Attack Surface Intelligence</div>
           </div>
         </div>

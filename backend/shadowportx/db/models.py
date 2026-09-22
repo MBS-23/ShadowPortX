@@ -217,6 +217,7 @@ class Scan(Base):
     __tablename__ = "scans"
 
     organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    engagement_id: Mapped[int | None] = mapped_column(ForeignKey("engagements.id", ondelete="SET NULL"), default=None, index=True)
     target: Mapped[str] = mapped_column(String(255), index=True)
     scan_type: Mapped[enums.ScanType] = mapped_column(enum_col(enums.ScanType), default=enums.ScanType.FULL)
     status: Mapped[enums.ScanStatus] = mapped_column(enum_col(enums.ScanStatus), default=enums.ScanStatus.QUEUED)
@@ -305,6 +306,8 @@ class Finding(Base):
     last_seen: Mapped[datetime] = mapped_column(default=utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(default=None)
     fingerprint: Mapped[str] = mapped_column(String(64), index=True)  # dedupe key across scans
+    notes: Mapped[str | None] = mapped_column(Text, default=None)      # tester/analyst notes
+    validated_at: Mapped[datetime | None] = mapped_column(default=None)
 
     organization: Mapped[Organization] = relationship(back_populates="findings")
     asset: Mapped[Asset] = relationship(back_populates="findings")
@@ -378,4 +381,22 @@ class MetricSnapshot(Base):
     ts: Mapped[datetime] = mapped_column(default=utcnow, index=True)
     org_risk: Mapped[float] = mapped_column(Float, default=0.0)
     metrics: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class Engagement(Base):
+    """Authorized assessment workspace (pentest / bug-bounty). Groups scans, findings, and
+    evidence for a scoped, time-boxed engagement — the ShadowPortX 3.0 workspace layer."""
+
+    __tablename__ = "engagements"
+
+    organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    client: Mapped[str | None] = mapped_column(String(200), default=None)
+    kind: Mapped[str] = mapped_column(String(20), default="pentest")  # pentest | bug_bounty | internal
+    status: Mapped[str] = mapped_column(String(20), default="active")  # planned | active | completed
+    scope_note: Mapped[str | None] = mapped_column(Text, default=None)
+    tester: Mapped[str | None] = mapped_column(String(200), default=None)
+    starts_at: Mapped[datetime | None] = mapped_column(default=None)
+    ends_at: Mapped[datetime | None] = mapped_column(default=None)
+    notes: Mapped[str | None] = mapped_column(Text, default=None)
 

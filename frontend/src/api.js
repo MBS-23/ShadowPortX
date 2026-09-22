@@ -22,6 +22,7 @@ export const endpoints = {
   finding: (id) => api.get(`/findings/${id}`).then((r) => r.data),
   updateFinding: (id, body) => api.patch(`/findings/${id}`, body).then((r) => r.data),
   verifyFinding: (id) => api.post(`/findings/${id}/verify`).then((r) => r.data),
+  validateFinding: (id) => api.post(`/findings/${id}/validate`).then((r) => r.data),
   changes: (params) => api.get("/changes", { params }).then((r) => r.data),
   scope: () => api.get("/scope").then((r) => r.data),
   addScope: (body) => api.post("/scope", body).then((r) => r.data),
@@ -46,6 +47,12 @@ export const endpoints = {
   assetGraph: (id) => api.get(`/graph/assets/${id}`).then((r) => r.data),
   blastRadius: (params) => api.get("/graph/blast-radius", { params }).then((r) => r.data),
   trends: () => api.get("/trends").then((r) => r.data),
+  // 3.0 engagement workspace
+  engagements: () => api.get("/engagements").then((r) => r.data),
+  engagement: (id) => api.get(`/engagements/${id}`).then((r) => r.data),
+  createEngagement: (body) => api.post("/engagements", body).then((r) => r.data),
+  updateEngagement: (id, body) => api.patch(`/engagements/${id}`, body).then((r) => r.data),
+  deleteEngagement: (id) => api.delete(`/engagements/${id}`),
 };
 
 export default api;

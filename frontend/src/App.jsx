@@ -17,6 +17,8 @@ import Graph from "./pages/Graph";
 import Risk from "./pages/Risk";
 import Trends from "./pages/Trends";
 import Scans from "./pages/Scans";
+import Engagements from "./pages/Engagements";
+import EngagementDetail from "./pages/EngagementDetail";
 import Monitoring from "./pages/Monitoring";
 import Integrations from "./pages/Integrations";
 import Scope from "./pages/Scope";
@@ -54,6 +56,8 @@ export default function App() {
           <Route path="/risk" element={<Risk />} />
           <Route path="/trends" element={<Trends />} />
           <Route path="/scans" element={<Scans />} />
+          <Route path="/engagements" element={<Engagements />} />
+          <Route path="/engagements/:id" element={<EngagementDetail />} />
           <Route path="/monitoring" element={<Monitoring />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/scope" element={<Scope />} />

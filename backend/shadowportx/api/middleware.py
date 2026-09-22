@@ -18,7 +18,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         resp = await call_next(request)
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
-        resp.headers.setdefault("X-Frame-Options", "DENY")
+        # SAMEORIGIN (not DENY) so the dashboard can preview its own HTML report in an
+        # iframe while still blocking cross-origin clickjacking.
+        resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
         resp.headers.setdefault("Referrer-Policy", "no-referrer")
         resp.headers.setdefault("X-XSS-Protection", "0")
         if settings.is_production:
