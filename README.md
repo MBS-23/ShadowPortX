@@ -66,6 +66,31 @@ results and leave engineers to manually correlate assets, services, technologies
 vulnerabilities. ShadowPortX closes the gap between **"what is exposed?"** and **"what should
 we fix first?"**
 
+## What makes it different
+
+Most external attack-surface tools are **closed-source SaaS with a black-box risk score**.
+ShadowPortX takes a deliberately different stance:
+
+- **Transparent, contextual risk — not a black box.** The SPX Exposure Score shows its full
+  per-factor breakdown on *every* finding (severity × exposure × asset criticality × confidence
+  × exploit-intel × verification). You can see, tune, and defend exactly why something ranks where
+  it does.
+- **Epistemic honesty built into the data model.** Findings carry an explicit maturity state —
+  `detected` → `potentially-affected` → `needs-verification` → `confirmed` — so version-correlation
+  guesses are never dressed up as confirmed compromise.
+- **A principled, auditable validation model.** Safe non-destructive confirmation (L0–L2) is
+  implemented; controlled proof-of-concept (L3) and exploitation (L4) are **deliberately not
+  enabled**, and the platform never fakes a confirmation.
+- **ASM *and* the engagement bridge.** Beyond continuous monitoring, it gives red teams a scoped
+  engagement workspace with evidence packages — bridging exposure management and authorized
+  assessment in one place.
+- **Yours to run and read.** Fully self-hostable and open — data, methodology, and every engine
+  are inspectable, versionable, and extendable, with no vendor lock-in.
+
+It doesn't try to replace specialized tools (Nmap, Burp, Nuclei, internet-wide datasets like
+Censys). It **orchestrates and contextualizes** discovery, verification, intelligence, and risk
+into one transparent, self-hosted workflow.
+
 ## How it works — the pipeline
 
 ```mermaid

@@ -6,12 +6,13 @@ export function Card({ className = "", children }) {
 
 export function StatCard({ label, value, sub, accent }) {
   return (
-    <Card className="p-4">
+    <Card className="card-hover p-4">
       <div className="text-xs uppercase tracking-wide text-faint">{label}</div>
-      <div className="mt-1 text-2xl font-semibold" style={accent ? { color: accent } : undefined}>
+      <div className="mt-1.5 text-[26px] leading-none font-semibold tracking-tight"
+        style={accent ? { color: accent } : undefined}>
         {value}
       </div>
-      {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
+      {sub && <div className="mt-1.5 text-xs text-muted">{sub}</div>}
     </Card>
   );
 }

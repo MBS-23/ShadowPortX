@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 const IconBase = ({ children }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -43,8 +43,9 @@ const NAV = [
 ];
 
 export default function Layout({ children }) {
+  const location = useLocation();
   return (
-    <div className="min-h-screen flex bg-bg">
+    <div className="min-h-screen flex">
       <aside className="sticky top-0 h-screen shrink-0 w-16 md:w-60 border-r border-border bg-surface/60 backdrop-blur flex flex-col">
         <div className="h-14 flex items-center gap-2.5 px-3 md:px-4 border-b border-border">
           <img src="/icon.svg" alt="ShadowPortX" className="h-8 w-8 shrink-0" />
@@ -78,7 +79,9 @@ export default function Layout({ children }) {
             <span className="text-xs text-muted">API connected</span>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto">{children}</main>
+        <main key={location.pathname} className="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto animate-in">
+          {children}
+        </main>
       </div>
     </div>
   );
