@@ -82,6 +82,29 @@ export default function FindingDetail() {
             <p className="text-sm text-muted leading-relaxed">{f.description}</p>
           </Card>
 
+          {f.evidence?.validation && (
+            <Card className="p-4 border-ok/40 bg-ok/5">
+              <h2 className="text-sm font-medium mb-2 flex items-center gap-2">
+                <span className="inline-grid place-items-center h-4 w-4 rounded-full bg-ok/20 text-ok text-[10px]">✓</span>
+                Validation proof
+              </h2>
+              <div className="text-xs space-y-1.5">
+                {f.evidence.validation.condition && (
+                  <div><span className="text-faint">Condition: </span><span className="text-text">{titleCase(f.evidence.validation.condition)}</span></div>
+                )}
+                {f.evidence.validation.method && (
+                  <div><span className="text-faint">Method: </span><span className="text-text">{f.evidence.validation.method}</span></div>
+                )}
+                {f.evidence.validation.probe && (
+                  <div><span className="text-faint">Probe: </span><span className="font-mono text-primary">{f.evidence.validation.probe}</span></div>
+                )}
+                {f.evidence.validation.response_snippet && (
+                  <div><span className="text-faint">Response: </span><span className="font-mono text-muted break-all">{f.evidence.validation.response_snippet}</span></div>
+                )}
+              </div>
+            </Card>
+          )}
+
           <Card className="p-4">
             <h2 className="text-sm font-medium mb-2">Evidence</h2>
             <pre className="text-xs bg-bg rounded-lg p-3 overflow-x-auto text-muted font-mono border border-border">
@@ -147,8 +170,9 @@ export default function FindingDetail() {
             </div>
             {f.validated_at && <div className="text-[10px] text-ok">Last validated {fmtTime(f.validated_at)}</div>}
             <p className="text-[10px] text-faint">
-              Validate = non-destructive confirmation (L0–L2). Verify fix = authorized re-scan.
-              Controlled exploitation (L3–L4) is not enabled.
+              Validate = safe confirmation (L0–L3): non-destructive verification plus read-only
+              proof-of-concept. Verify fix = authorized re-scan. Weaponized exploitation (L4) is
+              not enabled.
             </p>
           </Card>
 
