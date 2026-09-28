@@ -13,6 +13,9 @@ export default {
         "border-strong": "#33456b",
         primary: "#22d3ee",
         "primary-dim": "#0e7490",
+        // Signature secondary accent — the cyan→violet duotone is the brand identity.
+        accent: "#8b7cff",
+        "accent-dim": "#5b4fd6",
         text: "#e5e7eb",
         muted: "#94a3b8",
         faint: "#64748b",
@@ -26,6 +29,7 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["'Space Grotesk'", "Inter", "system-ui", "sans-serif"],
         mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
       },
       boxShadow: {

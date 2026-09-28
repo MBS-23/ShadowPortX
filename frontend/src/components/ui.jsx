@@ -6,13 +6,13 @@ export function Card({ className = "", children }) {
 
 export function StatCard({ label, value, sub, accent }) {
   return (
-    <Card className="card-hover p-4">
-      <div className="text-xs uppercase tracking-wide text-faint">{label}</div>
-      <div className="mt-1.5 text-[26px] leading-none font-semibold tracking-tight"
+    <Card className="card-accent card-hover p-4">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-faint">{label}</div>
+      <div className="h-display mt-2 text-[28px] leading-none font-bold tracking-tight"
         style={accent ? { color: accent } : undefined}>
         {value}
       </div>
-      {sub && <div className="mt-1.5 text-xs text-muted">{sub}</div>}
+      {sub && <div className="mt-2 text-xs text-muted">{sub}</div>}
     </Card>
   );
 }
@@ -108,8 +108,8 @@ export function PageHeader({ title, subtitle, actions }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
       <div>
-        <h1 className="text-xl font-semibold text-text">{title}</h1>
-        {subtitle && <p className="text-sm text-muted mt-0.5">{subtitle}</p>}
+        <h1 className="h-display text-[26px] font-bold text-text">{title}</h1>
+        {subtitle && <p className="text-sm text-muted mt-1 max-w-2xl">{subtitle}</p>}
       </div>
       {actions}
     </div>

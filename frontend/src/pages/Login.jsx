@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { endpoints } from "../api";
+import Logo from "../components/Logo";
 
 export default function Login({ onSuccess }) {
   const [email, setEmail] = useState("admin@shadowportx.local");
@@ -22,11 +23,11 @@ export default function Login({ onSuccess }) {
   return (
     <div className="min-h-screen grid place-items-center bg-bg px-4">
       <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2.5 mb-6 justify-center">
-          <img src="/icon.svg" alt="ShadowPortX" className="h-10 w-10" />
+        <div className="flex items-center gap-3 mb-6 justify-center">
+          <Logo size={40} />
           <div>
-            <div className="font-semibold text-text">ShadowPort<span className="text-primary">X</span></div>
-            <div className="text-[10px] text-faint tracking-wide">Attack Surface Intelligence</div>
+            <div className="h-display font-bold text-lg gradient-text gradient-text-animated">ShadowPortX</div>
+            <div className="text-[10px] text-faint tracking-[0.16em] uppercase">Attack Surface Intelligence</div>
           </div>
         </div>
         <form onSubmit={submit} className="card p-6 space-y-4">

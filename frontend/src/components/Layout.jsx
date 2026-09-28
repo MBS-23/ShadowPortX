@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
+import Logo from "./Logo";
 
 const IconBase = ({ children }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -48,10 +49,10 @@ export default function Layout({ children }) {
     <div className="min-h-screen flex">
       <aside className="sticky top-0 h-screen shrink-0 w-16 md:w-60 border-r border-border bg-surface/60 backdrop-blur flex flex-col">
         <div className="h-14 flex items-center gap-2.5 px-3 md:px-4 border-b border-border">
-          <img src="/icon.svg" alt="ShadowPortX" className="h-8 w-8 shrink-0" />
+          <Logo size={32} className="shrink-0" />
           <div className="hidden md:block leading-tight">
-            <div className="font-semibold text-sm text-text">ShadowPort<span className="text-primary">X</span></div>
-            <div className="text-[10px] text-faint tracking-wide">ASM · v3.0</div>
+            <div className="h-display font-bold text-[15px] gradient-text gradient-text-animated">ShadowPortX</div>
+            <div className="text-[10px] text-faint tracking-[0.16em] uppercase">ASM · v3.0</div>
           </div>
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
