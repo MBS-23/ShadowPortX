@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
@@ -35,10 +36,44 @@ class Base(DeclarativeBase):
 
 
 # Engine / session factory -----------------------------------------------------
-_connect_args = {"check_same_thread": False} if settings.is_sqlite else {}
+def _prepare_engine_url(raw: str) -> tuple[str, dict]:
+    """Normalize the configured database URL for async SQLAlchemy.
+
+    Accepts a plain Postgres URL exactly as pasted from a managed provider (Neon / Render /
+    Supabase): it upgrades the scheme to ``postgresql+asyncpg`` and translates libpq-style
+    SSL query params (``sslmode`` / ``channel_binding``) — which asyncpg rejects in the URL —
+    into an asyncpg ``ssl`` connect arg. SQLite is returned unchanged. This makes "paste the
+    connection string into SPX_DATABASE_URL" just work.
+    """
+    if raw.startswith("sqlite"):
+        return raw, {"check_same_thread": False}
+
+    for prefix in ("postgresql+asyncpg://", "postgresql://", "postgres://"):
+        if raw.startswith(prefix):
+            raw = "postgresql+asyncpg://" + raw[len(prefix):]
+            break
+
+    parts = urlsplit(raw)
+    query = dict(parse_qsl(parts.query))
+    ssl_required = False
+    for key in ("sslmode", "ssl", "channel_binding"):
+        val = query.pop(key, None)
+        if key in ("sslmode", "ssl") and val and val.lower() not in (
+            "disable", "false", "0", "allow", "prefer"
+        ):
+            ssl_required = True
+    clean = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+
+    connect_args: dict = {}
+    if ssl_required:
+        connect_args["ssl"] = True
+    return clean, connect_args
+
+
+_engine_url, _connect_args = _prepare_engine_url(settings.database_url)
 
 engine = create_async_engine(
-    settings.database_url,
+    _engine_url,
     echo=False,
     future=True,
     connect_args=_connect_args,
