@@ -45,6 +45,24 @@ class Settings(BaseSettings):
     # CORS: comma-separated extra allowed origins for a split deploy (Vercel frontend +
     # separately hosted backend), e.g. "https://shadowportx.vercel.app". localhost is always allowed.
     cors_origins: str = ""
+    # Self-service account creation from the sign-in screen. New accounts join the default
+    # org with least privilege (see self_registration_role); the first account in an empty
+    # org is bootstrapped as owner. Set false to lock the platform to invited/seeded users.
+    allow_self_registration: bool = True
+    self_registration_role: str = "viewer"
+
+    # --- SSO (OpenID Connect) --- works with any OIDC provider (Google/Okta/Auth0/Azure AD/Keycloak)
+    oidc_enabled: bool = False
+    oidc_issuer: str = ""            # e.g. https://accounts.google.com
+    oidc_client_id: str = ""
+    oidc_client_secret: str = ""
+    oidc_redirect_uri: str = ""      # e.g. https://<backend>/api/v1/auth/oidc/callback
+    oidc_scopes: str = "openid email profile"
+    oidc_default_role: str = "viewer"
+    oidc_allowed_domain: str = ""    # optional: only allow this email domain (e.g. "acme.com")
+    oidc_button_label: str = "Sign in with SSO"
+    # Where the browser lands after a successful SSO login (the dashboard origin).
+    oidc_post_login_redirect: str = "/"
     # Platform self-protection: max API requests per client IP per minute (0 = unlimited).
     api_rate_limit_per_min: int = 600
     scheduler_enabled: bool = True

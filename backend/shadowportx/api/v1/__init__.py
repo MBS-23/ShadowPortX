@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from shadowportx.api.v1 import (
+    admin,
     assets,
     auth,
     changes,
@@ -22,6 +23,7 @@ from shadowportx.api.v1 import (
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router)
+api_router.include_router(admin.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(risk.router)
 api_router.include_router(trends.router)

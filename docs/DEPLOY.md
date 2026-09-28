@@ -9,6 +9,40 @@ Pick the model that fits your environment.
 | Single process | demos, small self-host | uvicorn serves both at `:8000` | bundled `webui/` |
 | Docker Compose | full self-host | container | container (nginx) |
 | Vercel + host | public showcase | container host | Vercel (static) |
+| **Free hosting** | **public demo, $0** | **one container serves both (Render)** | **bundled in the same container** |
+
+---
+
+## 0. Free hosting (Render blueprint — $0, recommended for a public demo)
+
+The fastest way to get a public URL for free. One container builds the dashboard and the
+API and serves them together (root [`Dockerfile`](../Dockerfile)); the repo ships a Render
+blueprint ([`render.yaml`](../render.yaml)).
+
+1. Push this repository to GitHub.
+2. Go to **render.com → New → Blueprint** and connect the repo. Render reads `render.yaml`.
+3. When prompted, set **`SPX_ADMIN_PASSWORD`** (your first login password). `SPX_SECRET_KEY`
+   is generated automatically.
+4. **Apply.** In a few minutes you get `https://shadowportx-xxxx.onrender.com` — the dashboard
+   at `/`, the API under `/api/v1`, and docs at `/docs`.
+5. Sign in as `admin@shadowportx.local` with the password you set (or create an account).
+
+**Free-tier notes.** The free web service sleeps after ~15 min idle and cold-starts in ~30s
+on the next request. Its disk is ephemeral, so the default SQLite database resets on each
+redeploy — the seeded admin and authorization scope are recreated on every boot. To keep
+users, scans and findings across restarts, create a free Postgres (e.g. **Neon**) and set
+`SPX_DATABASE_URL` (uncomment it in `render.yaml`), e.g.
+`postgresql+asyncpg://USER:PASS@HOST/db`.
+
+> Other free/again-cheap container hosts (Fly.io, Railway, Koyeb) work the same way — point
+> them at the root `Dockerfile`; it binds to `$PORT` automatically.
+
+Build and run the same image locally to verify before you deploy:
+```bash
+docker build -t shadowportx .
+docker run -p 8000:8000 -e SPX_SECRET_KEY="$(openssl rand -hex 32)" shadowportx
+# open http://localhost:8000
+```
 
 ---
 

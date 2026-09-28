@@ -24,7 +24,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger("shadowportx")
 
 
-_DEV_SECRET = "dev-insecure-change-me-in-production"
+# The insecure default we refuse to run with in production (checked in lifespan below).
+_DEV_SECRET = "dev-insecure-change-me-in-production"  # nosec B105
 
 
 @asynccontextmanager

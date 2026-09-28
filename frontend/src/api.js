@@ -5,11 +5,38 @@ import axios from "axios";
 // e.g. "https://api.example.com/api/v1". A JWT, if present, is attached automatically.
 const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE || "/api/v1" });
 
+const TOKEN_KEY = "spx_token";
+export const getToken = () => {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+};
+export const setToken = (t) => {
+  try { localStorage.setItem(TOKEN_KEY, t); } catch { /* private mode */ }
+};
+export const clearToken = () => {
+  try { localStorage.removeItem(TOKEN_KEY); } catch { /* private mode */ }
+};
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("spx_token");
+  const token = getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// If a *previously authenticated* request comes back 401, the session has expired or the
+// token is invalid. Clear it and let the app fall back to the sign-in screen — this prevents
+// the dashboard from getting stuck refetching behind an "Authentication required" wall.
+// Bad-credential 401s from /login carry no Authorization header, so they never trigger this.
+api.interceptors.response.use(
+  (r) => r,
+  (error) => {
+    const hadAuth = Boolean(error?.config?.headers?.Authorization);
+    if (error?.response?.status === 401 && hadAuth) {
+      clearToken();
+      try { window.dispatchEvent(new Event("spx:auth-expired")); } catch { /* SSR/no-window */ }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const endpoints = {
   overview: () => api.get("/overview").then((r) => r.data),
@@ -29,7 +56,10 @@ export const endpoints = {
   addScope: (body) => api.post("/scope", body).then((r) => r.data),
   deleteScope: (id) => api.delete(`/scope/${id}`),
   login: (body) => api.post("/auth/login", body).then((r) => r.data),
+  register: (body) => api.post("/auth/register", body).then((r) => r.data),
   me: () => api.get("/auth/me").then((r) => r.data),
+  authConfig: () => api.get("/auth/config").then((r) => r.data),
+  oidcLoginUrl: () => `${import.meta.env.VITE_API_BASE || "/api/v1"}/auth/oidc/login`,
   // inventory + risk + monitoring
   services: () => api.get("/services").then((r) => r.data),
   technologies: () => api.get("/technologies").then((r) => r.data),
@@ -48,6 +78,10 @@ export const endpoints = {
   assetGraph: (id) => api.get(`/graph/assets/${id}`).then((r) => r.data),
   blastRadius: (params) => api.get("/graph/blast-radius", { params }).then((r) => r.data),
   trends: () => api.get("/trends").then((r) => r.data),
+  // admin console (owner/admin only)
+  adminOverview: () => api.get("/admin/overview").then((r) => r.data),
+  adminUsers: () => api.get("/admin/users").then((r) => r.data),
+  adminActivity: (limit = 50) => api.get("/admin/activity", { params: { limit } }).then((r) => r.data),
   // 3.0 engagement workspace
   engagements: () => api.get("/engagements").then((r) => r.data),
   engagement: (id) => api.get(`/engagements/${id}`).then((r) => r.data),

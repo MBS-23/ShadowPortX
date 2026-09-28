@@ -35,3 +35,6 @@ Thumbs.db
 .vscode/
 *.swp
 backend/webui/
+
+# delivered docs (binary, kept out of the repo)
+docs/*.pdf

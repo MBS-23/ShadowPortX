@@ -1,0 +1,18 @@
+# Keep the build context small and reproducible.
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+.git
+.github
+**/.pytest_cache
+**/.ruff_cache
+frontend/dist
+backend/webui
+backend/var
+**/*.db
+**/*.db-wal
+**/*.db-shm
+docs/*.pdf
+*.md
+!backend/README.md

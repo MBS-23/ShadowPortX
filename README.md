@@ -124,6 +124,9 @@ isolation and recomposed by the scan orchestrator.
 | **Reporting** ([`engines/reporting`](backend/shadowportx/engines/reporting)) | Executive + technical reports in JSON / CSV / HTML / PDF. |
 | **Worker + Scheduler** ([`worker/`](backend/shadowportx/worker)) | Async job execution off the request path, plus recurring scheduled scans for continuous monitoring. |
 | **Notifications** ([`services/notifications.py`](backend/shadowportx/services/notifications.py)) | Outbound webhooks (Slack/Teams/Discord/generic) on new high/critical findings — the extension point for enterprise connectors. |
+| **SSO / OIDC** ([`services/oidc.py`](backend/shadowportx/services/oidc.py)) | Standards-based OpenID Connect sign-in with any provider (Google/Okta/Auth0/Azure AD/Keycloak): discovery, signed-state CSRF protection, JWKS-verified ID tokens, role mapping, optional email-domain restriction. |
+| **Accounts** ([`api/v1/auth.py`](backend/shadowportx/api/v1/auth.py)) | Password + SSO sign-in and least-privilege self-service registration (first account bootstraps as owner; later sign-ups are read-only viewers). |
+| **Admin console** ([`api/v1/admin.py`](backend/shadowportx/api/v1/admin.py)) | Owner/admin view of adoption and usage: user roster (role, status, last-active), platform stats, and a live activity feed from the audit log. |
 
 ## Architecture
 
@@ -264,6 +267,15 @@ Default dev login: `admin@shadowportx.local` / `shadowportx` (override with `SPX
 
 ## Deployment
 
+**Free, one container (recommended for a public demo).** The root [`Dockerfile`](Dockerfile)
+builds the dashboard and lets the backend serve it at the same origin — deploy it free on
+Render with the included [`render.yaml`](render.yaml) blueprint (New → Blueprint → pick the
+repo → set `SPX_ADMIN_PASSWORD` → Apply). Run the exact image locally first:
+```bash
+docker build -t shadowportx . && docker run -p 8000:8000 \
+  -e SPX_SECRET_KEY="$(openssl rand -hex 32)" shadowportx   # open http://localhost:8000
+```
+
 **Full stack with Docker Compose** (PostgreSQL + backend + dashboard):
 ```bash
 cd deploy && docker compose up --build     # dashboard :8080 · API :8000
@@ -305,7 +317,8 @@ legacy/v1.0-desktop/   the original desktop scanner (preserved)
 
 ## Roadmap
 
-SSO/SAML/OIDC + MFA · hardened multi-tenant isolation & teams · vendor connectors
+**Shipped:** OpenID Connect SSO · self-service accounts · admin console · one-command free
+deploy. **Next:** SAML + MFA · hardened multi-tenant isolation & teams · vendor connectors
 (Jira/ServiceNow/Splunk/Sentinel) on the notification interface · Celery/Redis workers ·
 Kubernetes deployment.
 

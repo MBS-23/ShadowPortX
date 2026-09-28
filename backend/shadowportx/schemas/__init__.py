@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from shadowportx.core import enums
 
@@ -17,6 +17,26 @@ class ORMModel(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class RegisterRequest(BaseModel):
+    """Self-service account creation. Password policy is enforced here so the same rule
+    applies to every entry point (UI, API, scripts)."""
+
+    email: str
+    password: str = Field(min_length=8, max_length=128)
+    full_name: str | None = Field(default=None, max_length=120)
+
+    @field_validator("email")
+    @classmethod
+    def _normalize_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        # Lightweight structural check — avoids pulling in the email-validator dependency
+        # while rejecting obviously-malformed input before it reaches the database.
+        local, _, domain = v.partition("@")
+        if not local or "." not in domain or len(v) < 6:
+            raise ValueError("Enter a valid email address")
+        return v
 
 
 class TokenResponse(BaseModel):
@@ -419,3 +439,36 @@ class EngagementDetail(EngagementOut):
     stats: dict = {}
     scans: list[ScanOut] = []
     findings: list[FindingOut] = []
+
+
+# --- admin console (owner/admin only) ---
+class AdminUser(ORMModel):
+    id: int
+    email: str
+    full_name: str | None = None
+    role: enums.UserRole
+    is_active: bool
+    created_at: datetime
+    last_active_at: datetime | None = None  # derived from the audit log
+
+
+class AdminActivity(BaseModel):
+    actor: str
+    action: str
+    target: str | None = None
+    ts: datetime
+
+
+class AdminOverview(BaseModel):
+    users_total: int
+    users_active: int
+    users_by_role: dict[str, int]
+    new_users_7d: int
+    logins_7d: int
+    scans_total: int
+    scans_active: int
+    findings_total: int
+    open_findings: int
+    assets_total: int
+    recent_signups: list[AdminUser] = []
+    recent_activity: list[AdminActivity] = []

@@ -235,6 +235,8 @@ async def upsert_finding(
     return finding, created
 
 
-async def audit(session: AsyncSession, org_id: int | None, action: str, target: str | None = None, **detail):
-    session.add(models.AuditLog(organization_id=org_id, action=action, target=target, detail=detail))
+async def audit(session: AsyncSession, org_id: int | None, action: str, target: str | None = None,
+                actor: str = "system", **detail):
+    session.add(models.AuditLog(organization_id=org_id, action=action, target=target,
+                                actor=actor, detail=detail))
     await session.flush()

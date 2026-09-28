@@ -1,12 +1,19 @@
+import { forwardRef } from "react";
 import { SEVERITY, STATE_LABEL, STATUS_LABEL, riskColor, titleCase } from "../lib/format";
+import { useTilt } from "../lib/useTilt";
 
-export function Card({ className = "", children }) {
-  return <div className={`card ${className}`}>{children}</div>;
-}
+export const Card = forwardRef(function Card({ className = "", children, ...rest }, ref) {
+  return (
+    <div ref={ref} className={`card ${className}`} {...rest}>
+      {children}
+    </div>
+  );
+});
 
 export function StatCard({ label, value, sub, accent }) {
+  const tilt = useTilt(7);
   return (
-    <Card className="card-accent card-hover p-4">
+    <Card ref={tilt} className="card-accent card-hover p-4">
       <div className="text-[11px] uppercase tracking-[0.14em] text-faint">{label}</div>
       <div className="h-display mt-2 text-[28px] leading-none font-bold tracking-tight"
         style={accent ? { color: accent } : undefined}>

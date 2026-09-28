@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import Logo from "./Logo";
 
@@ -22,6 +23,7 @@ const icons = {
   graph: <IconBase><circle cx="5" cy="6" r="2.5" /><circle cx="19" cy="6" r="2.5" /><circle cx="12" cy="18" r="2.5" /><path d="M7 7 10.5 16M17 7 13.5 16M7.3 6h9.4" /></IconBase>,
   trends: <IconBase><path d="M3 3v18h18" /><path d="m7 14 3-4 3 3 5-7" /></IconBase>,
   engagements: <IconBase><path d="M9 3h6l1 3H8zM4 6h16v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /><path d="M9 12h6M9 16h4" /></IconBase>,
+  admin: <IconBase><path d="M12 2 4 6v6c0 4.4 3.4 8 8 10 4.6-2 8-5.6 8-10V6z" /><circle cx="12" cy="10" r="2.4" /><path d="M8.5 16.5a3.5 3.5 0 0 1 7 0" /></IconBase>,
 };
 
 const NAV = [
@@ -43,8 +45,62 @@ const NAV = [
   ["/reports", "Reports", "reports"],
 ];
 
-export default function Layout({ children }) {
+function AccountMenu({ user, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+
+  const email = user?.email || "account@shadowportx";
+  const role = user?.role || "viewer";
+  const initial = email.trim().charAt(0).toUpperCase() || "S";
+  const privileged = role === "owner" || role === "admin";
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-lg pl-1.5 pr-2.5 py-1.5 hover:bg-surface-2 transition-colors"
+        aria-haspopup="menu" aria-expanded={open} title={email}
+      >
+        <span className="spx-avatar" aria-hidden="true">{initial}</span>
+        <span className="hidden sm:flex flex-col items-start leading-tight">
+          <span className="text-xs text-text max-w-[150px] truncate">{email}</span>
+          <span className="text-[10px] text-faint uppercase tracking-wide">{role}</span>
+        </span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-faint"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 mt-2 w-56 card p-1.5 z-20 animate-in">
+          <div className="px-3 py-2.5 border-b border-border mb-1">
+            <div className="text-sm text-text truncate">{email}</div>
+            <div className="mt-1 inline-flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${privileged ? "bg-primary" : "bg-faint"}`} />
+              <span className="text-[11px] text-muted capitalize">{role} access</span>
+            </div>
+          </div>
+          <button
+            role="menuitem" onClick={onLogout}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted hover:text-text hover:bg-surface-2 transition-colors"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></svg>
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Layout({ children, user, onLogout }) {
   const location = useLocation();
+  const canManage = user?.role === "owner" || user?.role === "admin";
   return (
     <div className="min-h-screen flex">
       <aside className="sticky top-0 h-screen shrink-0 w-16 md:w-60 border-r border-border bg-surface/60 backdrop-blur flex flex-col">
@@ -64,6 +120,17 @@ export default function Layout({ children }) {
               <span className="hidden md:inline">{label}</span>
             </NavLink>
           ))}
+          {canManage && (
+            <>
+              <div className="my-2 mx-2 border-t border-border/70 hidden md:block" />
+              <NavLink to="/admin"
+                className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""} justify-center md:justify-start`}
+                title="Admin Console">
+                {icons.admin}
+                <span className="hidden md:inline">Admin</span>
+              </NavLink>
+            </>
+          )}
         </nav>
         <div className="p-3 border-t border-border hidden md:block">
           <div className="text-[10px] text-faint leading-relaxed">
@@ -74,10 +141,13 @@ export default function Layout({ children }) {
 
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 border-b border-border bg-surface/40 backdrop-blur sticky top-0 z-10 flex items-center justify-between px-4 md:px-6">
-          <div className="text-sm text-muted">Attack Surface Intelligence &amp; Exposure Management</div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
-            <span className="text-xs text-muted">API connected</span>
+          <div className="text-sm text-muted hidden sm:block">Attack Surface Intelligence &amp; Exposure Management</div>
+          <div className="flex items-center gap-3 ml-auto">
+            <span className="hidden md:inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-ok animate-pulse" />
+              <span className="text-xs text-muted">API connected</span>
+            </span>
+            <AccountMenu user={user} onLogout={onLogout} />
           </div>
         </header>
         <main key={location.pathname} className="flex-1 p-4 md:p-6 max-w-[1400px] w-full mx-auto animate-in">
