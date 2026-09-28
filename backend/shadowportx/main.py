@@ -87,6 +87,7 @@ app.include_router(api_router)
 @app.get("/health", tags=["meta"])
 async def health():
     return {"status": "ok", "service": "shadowportx", "version": __version__,
+            "database": "sqlite" if settings.is_sqlite else "postgres",
             "scope_enforcement": settings.enforce_scope}
 
 
