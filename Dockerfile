@@ -22,9 +22,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# ca-certificates: required so asyncpg can verify TLS to managed Postgres (Neon/Render/Supabase).
 # libpcap for optional scapy SYN scanning; curl for the health check.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpcap0.8 curl \
+    ca-certificates libpcap0.8 curl \
+    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install the backend (editable, so the package stays in the source tree and main.py can
