@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # --- app ---
     app_name: str = "ShadowPortX"
-    app_version: str = "3.0.0"
+    app_version: str = "3.1.0"
     environment: str = Field(default="development")  # development | production
     debug: bool = True
 

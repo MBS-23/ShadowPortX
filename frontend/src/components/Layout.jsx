@@ -108,7 +108,7 @@ export default function Layout({ children, user, onLogout }) {
           <Logo size={32} className="shrink-0" />
           <div className="hidden md:block leading-tight">
             <div className="h-display font-bold text-[15px] gradient-text gradient-text-animated">ShadowPortX</div>
-            <div className="text-[10px] text-faint tracking-[0.16em] uppercase">ASM · v3.0</div>
+            <div className="text-[10px] text-faint tracking-[0.16em] uppercase">ASM · v3.1</div>
           </div>
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
