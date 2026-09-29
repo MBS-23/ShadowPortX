@@ -1,15 +1,16 @@
-"""Admin console — platform-wide visibility for owners/admins.
+"""Admin console — platform-wide visibility and user management for owners/admins.
 
-Answers "who is using this platform and what are they doing": user roster with
-derived last-activity, adoption/usage counters, and a recent-activity feed sourced
-from the audit log. Read-only; every route requires a management role.
+Answers "who is using this platform and what are they doing": user roster with derived
+last-activity, adoption/usage counters, and a recent-activity feed sourced from the audit
+log — plus role/status management so the owner can grant a user a working role (analyst) or
+deactivate them. Every route requires a management role.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +19,7 @@ from shadowportx.api.deps import Context, require_manage
 from shadowportx.core import enums
 from shadowportx.db import models
 from shadowportx.db.base import get_session, utcnow
+from shadowportx.services import persistence as P
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -123,3 +125,45 @@ async def admin_activity(
         schemas.AdminActivity(actor=a.actor, action=a.action, target=a.target, ts=a.ts)
         for a in rows
     ]
+
+
+@router.patch("/users/{user_id}", response_model=schemas.AdminUser)
+async def admin_update_user(
+    user_id: int,
+    body: schemas.AdminUserUpdate,
+    ctx: Context = Depends(require_manage),
+    session: AsyncSession = Depends(get_session),
+):
+    """Change a user's role (e.g. viewer -> analyst so they can run scans) or active status.
+
+    Guardrails: you cannot change your own role/status (prevents self-lockout), and only an
+    owner may grant or revoke the owner role.
+    """
+    user = (await session.execute(
+        select(models.User).where(
+            models.User.id == user_id, models.User.organization_id == ctx.org_id)
+    )).scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+    if user.email == ctx.email:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "You cannot change your own role or status")
+
+    data = body.model_dump(exclude_none=True)
+    if not data:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nothing to update")
+
+    if "role" in data:
+        new_role = data["role"]
+        if (new_role == enums.UserRole.OWNER or user.role == enums.UserRole.OWNER) \
+                and ctx.role != enums.UserRole.OWNER:
+            raise HTTPException(status.HTTP_403_FORBIDDEN,
+                                "Only an owner can grant or revoke the owner role")
+        user.role = new_role
+    if "is_active" in data:
+        user.is_active = data["is_active"]
+
+    await session.flush()
+    await P.audit(session, ctx.org_id, "admin.user_updated", target=user.email, actor=ctx.email,
+                  role=user.role.value, is_active=user.is_active)
+    last_active = await _last_active_map(session, ctx.org_id)
+    return _to_admin_user(user, last_active)

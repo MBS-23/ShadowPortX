@@ -1,12 +1,32 @@
+import { useState } from "react";
 import { endpoints } from "../api";
 import { useFetch } from "../lib/useFetch";
 import { Card, StatCard, PageHeader, Spinner, ErrorNote, Empty, Pill } from "../components/ui";
 import { fmtTime, fmtRelative, titleCase } from "../lib/format";
 
 const ROLE_TONE = { owner: "primary", admin: "primary", analyst: "ok", developer: "warn", viewer: "muted" };
+const ASSIGNABLE_ROLES = ["viewer", "developer", "analyst", "admin"]; // owner added only for owners
 
 function RoleBadge({ role }) {
   return <Pill tone={ROLE_TONE[role] || "muted"}>{titleCase(role)}</Pill>;
+}
+
+function RoleSelect({ user, currentUser, onChange, busy }) {
+  const isSelf = currentUser?.email === user.email;
+  // Only an owner can assign/keep the owner role.
+  const options = currentUser?.role === "owner" ? [...ASSIGNABLE_ROLES, "owner"] : ASSIGNABLE_ROLES;
+  if (isSelf) return <RoleBadge role={user.role} />;
+  const ownerLocked = user.role === "owner" && currentUser?.role !== "owner";
+  if (ownerLocked) return <RoleBadge role={user.role} />;
+  return (
+    <select
+      className="input py-1 text-xs" value={user.role} disabled={busy}
+      onChange={(e) => onChange(user.id, { role: e.target.value })}
+      aria-label={`Role for ${user.email}`}
+    >
+      {options.map((r) => <option key={r} value={r}>{titleCase(r)}</option>)}
+    </select>
+  );
 }
 
 function ActionLabel({ action }) {
@@ -19,9 +39,21 @@ function ActionLabel({ action }) {
   return <span>{map[action] || titleCase(action.replace(/\./g, " "))}</span>;
 }
 
-export default function Admin() {
-  const { data: ov, loading, error } = useFetch(() => endpoints.adminOverview(), [], { pollMs: 15000 });
-  const { data: users } = useFetch(() => endpoints.adminUsers(), []);
+export default function Admin({ currentUser }) {
+  const { data: ov, loading, error, reload: reloadOv } = useFetch(() => endpoints.adminOverview(), [], { pollMs: 15000 });
+  const { data: users, reload: reloadUsers } = useFetch(() => endpoints.adminUsers(), []);
+  const [busyId, setBusyId] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  const updateUser = async (id, body) => {
+    setBusyId(id); setMsg(null);
+    try {
+      await endpoints.adminUpdateUser(id, body);
+      await Promise.all([reloadUsers(), reloadOv()]);
+    } catch (e) {
+      setMsg(e?.response?.data?.detail || "Could not update user");
+    } finally { setBusyId(null); }
+  };
 
   if (loading && !ov) return <Spinner label="Loading admin console…" />;
   if (error) return <ErrorNote error={error} />;
@@ -32,8 +64,15 @@ export default function Admin() {
     <div>
       <PageHeader
         title="Admin Console"
-        subtitle="Who is using the platform, what they're doing, and how adoption is trending — visible to owners and admins only."
+        subtitle="Who is using the platform, what they're doing, and how adoption is trending. Change a user's role to give them access (e.g. Analyst can run scans)."
       />
+
+      {msg && (
+        <div className="spx-auth-error mb-3" role="alert">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+          <span>{String(msg)}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <StatCard label="Users" value={ov.users_total} sub={`${ov.users_active} active · ${ov.new_users_7d} new (7d)`} />
@@ -79,12 +118,26 @@ export default function Admin() {
                           </div>
                         </div>
                       </td>
-                      <td className="td"><RoleBadge role={u.role} /></td>
                       <td className="td">
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-ok" : "bg-faint"}`} />
-                          <span className="text-xs text-muted">{u.is_active ? "Active" : "Disabled"}</span>
-                        </span>
+                        <RoleSelect user={u} currentUser={currentUser} onChange={updateUser} busy={busyId === u.id} />
+                      </td>
+                      <td className="td">
+                        {currentUser?.email === u.email ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-ok" : "bg-faint"}`} />
+                            <span className="text-xs text-muted">{u.is_active ? "Active" : "Disabled"}</span>
+                          </span>
+                        ) : (
+                          <button
+                            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-surface-2 transition-colors"
+                            disabled={busyId === u.id}
+                            onClick={() => updateUser(u.id, { is_active: !u.is_active })}
+                            title={u.is_active ? "Click to deactivate" : "Click to activate"}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-ok" : "bg-faint"}`} />
+                            <span className="text-xs text-muted">{u.is_active ? "Active" : "Disabled"}</span>
+                          </button>
+                        )}
                       </td>
                       <td className="td hidden md:table-cell text-muted text-xs">{fmtTime(u.created_at)}</td>
                       <td className="td text-muted text-xs">{u.last_active_at ? fmtRelative(u.last_active_at) : "—"}</td>

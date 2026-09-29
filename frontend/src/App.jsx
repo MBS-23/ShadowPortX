@@ -25,7 +25,7 @@ import Scope from "./pages/Scope";
 import Reports from "./pages/Reports";
 import Admin from "./pages/Admin";
 
-function AppRoutes() {
+function AppRoutes({ user }) {
   return (
     <Routes>
       <Route path="/" element={<Overview />} />
@@ -47,7 +47,7 @@ function AppRoutes() {
       <Route path="/integrations" element={<Integrations />} />
       <Route path="/scope" element={<Scope />} />
       <Route path="/reports" element={<Reports />} />
-      <Route path="/admin" element={<Admin />} />
+      <Route path="/admin" element={<Admin currentUser={user} />} />
     </Routes>
   );
 }
@@ -106,7 +106,7 @@ export default function App() {
       {phase === "guest" && <Login onSuccess={handleSuccess} />}
       {phase === "authed" && (
         <Layout user={user} onLogout={handleLogout}>
-          <AppRoutes />
+          <AppRoutes user={user} />
         </Layout>
       )}
     </>

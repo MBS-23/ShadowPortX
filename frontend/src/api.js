@@ -82,6 +82,7 @@ export const endpoints = {
   adminOverview: () => api.get("/admin/overview").then((r) => r.data),
   adminUsers: () => api.get("/admin/users").then((r) => r.data),
   adminActivity: (limit = 50) => api.get("/admin/activity", { params: { limit } }).then((r) => r.data),
+  adminUpdateUser: (id, body) => api.patch(`/admin/users/${id}`, body).then((r) => r.data),
   // 3.0 engagement workspace
   engagements: () => api.get("/engagements").then((r) => r.data),
   engagement: (id) => api.get(`/engagements/${id}`).then((r) => r.data),

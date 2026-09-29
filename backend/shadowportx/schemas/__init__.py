@@ -452,6 +452,11 @@ class AdminUser(ORMModel):
     last_active_at: datetime | None = None  # derived from the audit log
 
 
+class AdminUserUpdate(BaseModel):
+    role: enums.UserRole | None = None
+    is_active: bool | None = None
+
+
 class AdminActivity(BaseModel):
     actor: str
     action: str
