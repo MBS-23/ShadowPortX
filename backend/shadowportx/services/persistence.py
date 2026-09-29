@@ -7,7 +7,7 @@ take an ``AsyncSession`` and flush (not commit) — the caller owns the transact
 from __future__ import annotations
 
 import ipaddress
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -142,9 +142,14 @@ async def upsert_certificate(session: AsyncSession, asset_id: int, cert: CertInf
         if not v:
             return None
         try:
-            return datetime.fromisoformat(v)
+            dt = datetime.fromisoformat(v)
         except ValueError:
             return None
+        # Normalize to naive UTC — cert dates arrive tz-aware and Postgres rejects an aware
+        # datetime for a tz-naive column.
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(UTC).replace(tzinfo=None)
+        return dt
 
     stmt = select(models.Certificate).where(models.Certificate.asset_id == asset_id)
     row = (await session.execute(stmt)).scalars().first()

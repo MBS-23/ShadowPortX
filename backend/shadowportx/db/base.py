@@ -23,8 +23,14 @@ from shadowportx.core.config import settings
 
 
 def utcnow() -> datetime:
-    """Timezone-aware UTC timestamp (never use naive datetimes for security data)."""
-    return datetime.now(UTC)
+    """Naive UTC timestamp.
+
+    All timestamp columns are ``TIMESTAMP WITHOUT TIME ZONE`` and hold UTC. We store naive
+    UTC so the same value inserts cleanly on both SQLite and PostgreSQL — asyncpg rejects an
+    aware datetime for a tz-naive column ("can't subtract offset-naive and offset-aware").
+    Every datetime in the app is UTC by construction, so this stays unambiguous.
+    """
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):
